@@ -24,11 +24,13 @@ core_args=(
 args=( "${core_args[@]}" )
 
 function make_pram {
-    qemu-img create -f raw -o size=256b "${machine_name}.pram"
+    #qemu-img create -f raw -o size=256b "${machine_name}.pram"
+    dd if=/dev/zero of="${machine_name}.pram" bs=1 count=0 seek=256 2> /dev/null
 }
 
 function make_disk {
-    qemu-img create -f raw -o size=${1}M "${machine_name}.img"
+    #qemu-img create -f raw -o size=${1}M "${machine_name}.img"
+    dd if=/dev/zero of="${machine_name}.img" bs=1 count=0 seek="$(( ${1} * 1024 * 1024 ))" 2> /dev/null
 }
 
 function attach_pram {
