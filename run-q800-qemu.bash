@@ -35,7 +35,7 @@ function make_disk {
 
 function attach_pram {
     args+=(
-        -drive file="${1}",format=raw,if=mtd
+        -drive file="${machine_name}.pram",format=raw,if=mtd
     )
 }
 
