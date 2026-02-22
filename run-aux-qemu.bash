@@ -7,8 +7,8 @@ launch_dir="$PWD"
 
 app_dir="${0%/*}"
 
-qemu_path=/btrfs/seagate4t/qemu/qemu-bin-9.1.1/bin/
-export PATH="${qemu_path}:$PATH"
+#qemu_path=/btrfs/seagate4t/qemu/qemu-bin-9.1.1/bin/
+#export PATH="${qemu_path}:$PATH"
 
 display_type=gtk
 [[ $(uname -s) = Darwin ]] && { display_type=cocoa; }
@@ -19,8 +19,6 @@ core_args=(
     -m 136
     -bios "${app_dir}/Quadra800.rom"
     -display "$display_type" -g 1152x870x8
-    -device nubus-virtio-mmio,romfile="${app_dir}/classicvirtio-drivers/classic/declrom"
-    -device virtio-tablet-device
 )
 
 args=( "${core_args[@]}" )
@@ -36,6 +34,14 @@ function make_disk {
 function attach_pram {
     args+=(
         -drive file="${1}",format=raw,if=mtd
+    )
+}
+
+function attach_classicvirtio {
+    # NB: this breaks booting with an empty PRAM
+    args+=(
+        -device nubus-virtio-mmio,romfile="${app_dir}/classicvirtio-drivers/classic/declrom"
+        -device virtio-tablet-device
     )
 }
 
@@ -105,7 +111,7 @@ function run {
 
 #scsi_index=3
 #attach_cdrom nbd://ten64.local/Apple-Legacy-Nov_1999.iso
-#attach_cdrom nbd://ten64.local/APPLE_AUX_3.1.0_FILE_SERVER_WGS95.ISO
+#attach_cdrom nbd://ten64.local/APPLE_AUX_3.1.0_FILE_SERVER_WGS95.ISO,throttling.iops-total=100
 #attach_cdrom nbd://ten64.local/APPLE_AUX_3.1.0_DB_SERVER_WGS95.ISO
 #attach_cdrom nbd://ten64.local/AppleShare_Pro_1.1_Install.iso
 #attach_cdrom nbd://ten64.local/A-UX_Developer_Tools_1.1.iso
