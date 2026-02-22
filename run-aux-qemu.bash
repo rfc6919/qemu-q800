@@ -3,20 +3,22 @@ set -euo pipefail
 
 machine_name="$1"
 
-files_dir="$PWD"
+launch_dir="$PWD"
+
 app_dir="${0%/*}"
-cd "$app_dir"
 
 qemu_path=/btrfs/seagate4t/qemu/qemu-bin-9.1.1/bin/
 export PATH="${qemu_path}:$PATH"
+
+display_type=gtk
+[[ $(uname -s) = Darwin ]] && { display_type=cocoa; }
 
 core_args=(
     -monitor stdio
     -M q800
     -m 136
     -bios "${app_dir}/Quadra800.rom"
-    -display gtk -g 1152x870x8
-    -drive file="${files_dir}/${machine_name}.pram",format=raw,if=mtd
+    -display "$display_type" -g 1152x870x8
     -device nubus-virtio-mmio,romfile="${app_dir}/classicvirtio-drivers/classic/declrom"
     -device virtio-tablet-device
 )
@@ -29,6 +31,22 @@ function make_pram {
 
 function make_disk {
     qemu-img create -f raw -o size=${1}M "${machine_name}.img"
+}
+
+function attach_pram {
+    args+=(
+        -drive file="${1}",format=raw,if=mtd
+    )
+}
+
+function attach_network {
+    # call with the netdev specification, eg:
+    # attach_network user
+    # attach_network vde,sock=/tmp/vde
+    mac="08:00:07:$(md5sum <<<"${machine_name}" | perl -ne 'print join(":",(m/../g)[0,1,2])')"
+    args+=(
+        -nic "$1",model=dp8393x,mac=$mac
+    )
 }
 
 scsi_index=0
@@ -81,11 +99,11 @@ function run {
     stty sane
 }
 
-attach_disk "${files_dir}/${machine_name}.img"
+#attach_disk "${files_dir}/${machine_name}.img"
 #attach_disk /tmp/aux/AUX3transfer.img
 #attach_disk /tmp/aux/AUX3installboot.img
 
-scsi_index=3
+#scsi_index=3
 #attach_cdrom nbd://ten64.local/Apple-Legacy-Nov_1999.iso
 #attach_cdrom nbd://ten64.local/APPLE_AUX_3.1.0_FILE_SERVER_WGS95.ISO
 #attach_cdrom nbd://ten64.local/APPLE_AUX_3.1.0_DB_SERVER_WGS95.ISO
@@ -96,6 +114,8 @@ scsi_index=3
 #attach_cdrom nbd://ten64.local/SYSTEM_7-5-3-RETAIL.ISO
 
 #attach_virtioblk /btrfs/seagate4t/aux/macintoshgarden.org/sites/macintoshgarden.org/files/apps/StuffItExpander55.dsk
-attach_9p "9P" "/tmp/aux/shared/"
+#attach_9p "9P" "/tmp/aux/shared/"
+
+. "${machine_name}.conf"
 
 run
